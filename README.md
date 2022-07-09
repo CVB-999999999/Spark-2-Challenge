@@ -27,3 +27,9 @@ Rename Columns - <https://stackoverflow.com/questions/35592917/renaming-column-n
 Spark write to CSV - <https://sparkbyexamples.com/spark/spark-write-dataframe-to-csv-file/>
 
 Spark Sort - <https://sparkbyexamples.com/spark/spark-sort-column-in-descending-order/>
+
+## Part 3
+
+Join 2 DF - <https://stackoverflow.com/questions/53872107/merge-two-spark-dataframes-based-on-a-column>
+
+Date Format - <https://sparkbyexamples.com/spark/spark-sql-date-and-time-functions/#date_format>
