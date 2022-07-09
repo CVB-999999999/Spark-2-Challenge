@@ -98,6 +98,18 @@ object App {
       "SELECT c._c0, a._c1, c._c2, c._c3, c._c4, c._c5, c._c6, c._c7, c._c8, c._c9, c._c10, c._c11, c._c12 " +
         "FROM df3c c, df3a a WHERE a._c0 == c._c0")
 
+    df3 = df3.na.replace("_c2", Map("NaN" -> null))
+    df3 = df3.na.replace("_c3", Map("NaN" -> "0"))
+    df3 = df3.na.replace("_c4", Map("NaN" -> null))
+    df3 = df3.na.replace("_c5", Map("NaN" -> null))
+    df3 = df3.na.replace("_c6", Map("NaN" -> null))
+    df3 = df3.na.replace("_c7", Map("NaN" -> null))
+    df3 = df3.na.replace("_c8", Map("NaN" -> null))
+    df3 = df3.na.replace("_c9", Map("NaN" -> null))
+    df3 = df3.na.replace("_c10", Map("NaN" -> null))
+    df3 = df3.na.replace("_c11", Map("NaN" -> null))
+    df3 = df3.na.replace("_c12", Map("NaN" -> null))
+
     // Change String to the current type
     // Rating
     df3 = df3.withColumn("_c2", col("_c2").cast(DoubleType))
@@ -118,7 +130,7 @@ object App {
     df3 = df3.toDF("App", "Categories", "Rating", "Reviews", "Size", "Installs", "Type", "Price",
       "Content_Rating", "Genres", "Last_Updated", "Current_Version", "Minimum_Android_Version")
 
-    //    df3.sort("_c0").show()
+    df3.sort("App").show()
 
     /* ---- Part 4 ---- */
 
@@ -142,15 +154,16 @@ object App {
     // Create df4
     df3.createOrReplaceTempView("df3")
     df1.createOrReplaceTempView("df1")
-    var df4 = spark.sql("SELECT df3.*, df1.Average_Sentiment_Polarity FROM df3, df1 WHERE df1.App == df3.App")
+    var df4 = spark.sql("SELECT df3.*, df1.Average_Sentiment_Polarity FROM df3 LEFT JOIN df1 on  df1.App == df3.App")
+
+    // Replace NaN
+    df4 = df4.na.replace("Rating", Map("NaN" -> null))
 
     // Creates a new DF with the array split into new rows
-    df4 = df4.select(col("App"), col("Categories"), col("Rating"), col("Reviews"),
+    df4 = df4.select(col("App"), col("Categories"), col("Rating").cast(LongType), col("Reviews"),
       col("Size"), col("Installs"), col("Type"), col("Price"), col("Content_Rating"),
       explode(col("Genres")).alias("Genres"), col("Last_Updated"),
       col("Current_Version"), col("Minimum_Android_Version"), col("Average_Sentiment_Polarity"))
-
-    df4.show(100)
 
     // Creates the final DF with right format
     df4 = df4.groupBy("Genres").agg(
@@ -162,7 +175,6 @@ object App {
     // Change header for the correct ones
     df4 = df4.toDF("Genre", "Count", "Average_Rating", "Average_Sentiment_Polarity")
 
-    //    df4.agg("Count" -> "sum").show()
     df4.show()
 
     // Save to Parquet
