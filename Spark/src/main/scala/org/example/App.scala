@@ -21,7 +21,7 @@ object App {
     /* ---- Part 1 ---- */
 
     // Loads the csv
-    /*var gpsur = spark.read.csv("./google-play-store-apps/googleplaystore_user_reviews.csv")
+    var gpsur = spark.read.csv("./google-play-store-apps/googleplaystore_user_reviews.csv")
 
     // Replace empty cell with 0
     gpsur = gpsur.na.replace("_c3", Map("nan" -> "0"))
@@ -39,37 +39,38 @@ object App {
     // _c0 -> App
     // _c3 -> Average_Sentiment_Polarity
     df1 = df1.toDF("App", "Average_Sentiment_Polarity")
-*/
-    //    df1.show()
+
+//    df1.show()
 
     /* ---- Part 2 ---- */
 
     // Loads the csv
     var gps = spark.read.csv("./google-play-store-apps/googleplaystore.csv")
-    /*
-      // Change NaN and other to 0
-      var df2 = gps.na.replace("_c2", Map("nan" -> "0"))
-      df2 = df2.na.replace("_c2", Map("NaN" -> "0"))
-      df2 = df2.na.replace("_c2", Map("null" -> "0"))
-      df2 = df2.na.replace("_c2", Map("" -> "0"))
 
-      // Change Rating column to double
-      df2 = df2.withColumn("_c2", col("_c2").cast(DoubleType)).as("_c2")
+    // Change NaN and other to 0
+    var df2 = gps.na.replace("_c2", Map("nan" -> "0"))
+    df2 = df2.na.replace("_c2", Map("NaN" -> "0"))
+    df2 = df2.na.replace("_c2", Map("null" -> "0"))
+    df2 = df2.na.replace("_c2", Map("" -> "0"))
 
-      // Filter Ratings bellow 4
-      df2 = df2.filter(df2("_c2") >= 4)
+    // Change Rating column to double
+    df2 = df2.withColumn("_c2", col("_c2").cast(DoubleType)).as("_c2")
 
-      // Sort by Rating Desc
-      df2 = df2.sort(col("_c2").desc)
+    // Filter Ratings bellow 4
+    df2 = df2.filter(df2("_c2") >= 4)
 
-      // Save to CSV
-      // TODO: Change File name
-      df2.coalesce(1)
-        .write.format("com.databricks.spark.csv")
-        .option("header", "true")
-        .option("delimiter", "§")
-        .save("best_apps")
-  */
+    // Sort by Rating Desc
+    df2 = df2.sort(col("_c2").desc)
+
+    // Save to CSV
+    // TODO: Change File name
+    df2.coalesce(1)
+      .write.format("com.databricks.spark.csv")
+      .option("header", "true")
+      .option("delimiter", "§")
+      .mode("overwrite")
+      .save("best_apps")
+
 
     /* ---- Part 3 ---- */
 
@@ -94,7 +95,9 @@ object App {
     df3C.createOrReplaceTempView("df3c")
     df3A.createOrReplaceTempView("df3a")
 
-    var df3 = spark.sql("SELECT c._c0, a._c1, c._c2, c._c3, c._c4, c._c5, c._c6, c._c7, c._c8, c._c9, c._c10, c._c11, c._c12 FROM df3c c, df3a a WHERE a._c0 == c._c0")
+    var df3 = spark.sql(
+      "SELECT c._c0, a._c1, c._c2, c._c3, c._c4, c._c5, c._c6, c._c7, c._c8, c._c9, c._c10, c._c11, c._c12 " +
+        "FROM df3c c, df3a a WHERE a._c0 == c._c0")
 
     // Change String to the current type
     // Rating
@@ -113,9 +116,28 @@ object App {
     df3 = df3.withColumn("_c10", to_date(col("_c10"), "MMMM d, yyyy"))
 
     // Rename Columns
-    df3 = df3.toDF("App", "Categories", "Rating", "Reviews", "Size", "Installs", "Type", "Price", "Content_Rating", "Genres", "Last_Updated", "Current_Version", "Minimum_Android_Version")
+    df3 = df3.toDF("App", "Categories", "Rating", "Reviews", "Size", "Installs", "Type", "Price",
+      "Content_Rating", "Genres", "Last_Updated", "Current_Version", "Minimum_Android_Version")
 
-    df3.sort("_c0").show()
+//    df3.sort("_c0").show()
 
+    /* ---- Part 4 ---- */
+
+    // Merge df1 and df3 into df13
+    df3.createOrReplaceTempView("df3")
+    df1.createOrReplaceTempView("df1")
+
+    var df13 = spark.sql("SELECT df3.*, df1.Average_Sentiment_Polarity FROM df3, df1 WHERE df1.App == df3.App")
+
+    // Save to Parquet
+    df13.coalesce(1).write
+      .format("parquet")
+      .mode("overwrite")
+      .option("compression", "gzip")
+      .save("googleplaystore_cleaned")
+
+//    df13.show()
+
+    /* ---- Part 4 ---- */
   }
 }
