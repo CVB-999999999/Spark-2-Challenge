@@ -3,7 +3,7 @@ package org.example
 import org.apache.spark.sql.catalyst.ScalaReflection.universe.show
 import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.{SparkSession, functions}
-import org.apache.spark.sql.functions.{aggregate, array_join, col, collect_list, concat_ws, date_format, substring, to_date, upper, when}
+import org.apache.spark.sql.functions.{aggregate, array_join, col, collect_list, concat_ws, date_format, explode, substring, to_date, upper, when}
 import org.apache.spark.sql.types.{DateType, DoubleType, LongType, StringType}
 
 /**
@@ -40,7 +40,7 @@ object App {
     // _c3 -> Average_Sentiment_Polarity
     df1 = df1.toDF("App", "Average_Sentiment_Polarity")
 
-//    df1.show()
+    //    df1.show()
 
     /* ---- Part 2 ---- */
 
@@ -63,7 +63,6 @@ object App {
     df2 = df2.sort(col("_c2").desc)
 
     // Save to CSV
-    // TODO: Change File name
     df2.coalesce(1)
       .write.format("com.databricks.spark.csv")
       .option("header", "true")
@@ -119,7 +118,7 @@ object App {
     df3 = df3.toDF("App", "Categories", "Rating", "Reviews", "Size", "Installs", "Type", "Price",
       "Content_Rating", "Genres", "Last_Updated", "Current_Version", "Minimum_Android_Version")
 
-//    df3.sort("_c0").show()
+    //    df3.sort("_c0").show()
 
     /* ---- Part 4 ---- */
 
@@ -136,8 +135,41 @@ object App {
       .option("compression", "gzip")
       .save("googleplaystore_cleaned")
 
-//    df13.show()
+    //    df13.show()
 
-    /* ---- Part 4 ---- */
+    /* ---- Part 5 ---- */
+
+    // Create df4
+    df3.createOrReplaceTempView("df3")
+    df1.createOrReplaceTempView("df1")
+    var df4 = spark.sql("SELECT df3.*, df1.Average_Sentiment_Polarity FROM df3, df1 WHERE df1.App == df3.App")
+
+    // Creates a new DF with the array split into new rows
+    df4 = df4.select(col("App"), col("Categories"), col("Rating"), col("Reviews"),
+      col("Size"), col("Installs"), col("Type"), col("Price"), col("Content_Rating"),
+      explode(col("Genres")).alias("Genres"), col("Last_Updated"),
+      col("Current_Version"), col("Minimum_Android_Version"), col("Average_Sentiment_Polarity"))
+
+    df4.show(100)
+
+    // Creates the final DF with right format
+    df4 = df4.groupBy("Genres").agg(
+      "App" -> "count",
+      "Rating" -> "avg",
+      "Average_Sentiment_Polarity" -> "avg"
+    )
+
+    // Change header for the correct ones
+    df4 = df4.toDF("Genre", "Count", "Average_Rating", "Average_Sentiment_Polarity")
+
+    //    df4.agg("Count" -> "sum").show()
+    df4.show()
+
+    // Save to Parquet
+    df4.coalesce(1).write
+      .format("parquet")
+      .mode("overwrite")
+      .option("compression", "gzip")
+      .save("googleplaystore_metrics")
   }
 }
