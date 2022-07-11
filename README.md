@@ -2,6 +2,8 @@
 
 [Challenge Link](https://github.com/bdu-xpand-it/BDU-Recruitment-Challenges/wiki/Spark-2-Recruitment-Challenge)
 
+Run -> \<spark-submit\> --class org.example.App Spark-1.0-SNAPSHOT.jar
+
 ## Setup
 
 - Spark Instalation - <https://www.tutorialspoint.com/apache_spark/apache_spark_installation.htm>
@@ -41,8 +43,6 @@
 - Spark Parquet Save - <https://stackoverflow.com/questions/51628958/spark-savewrite-parquet-only-one-file>
 
 - Spark Save Docs - <https://spark.apache.org/docs/3.1.2/api/scala/org/apache/spark/sql/DataFrameWriter.html>
-
-## Part 5
 
 ## Prints
 
